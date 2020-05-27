@@ -57,7 +57,7 @@ client.on("chat", (channel, userstate, message, self) => {
     }
       
     if (message === '!help' || message === '!commands') {
-        client.say(channel, `@${userstate.username} https://gist.github.com/slashinfty/1bf0ae88b4c7bb6556229ed44f05b351`);
+        client.say(channel, `@${userstate.username} https://github.com/slashinfty/inftyb0t/blob/master/readme.md`);
     }
     
     if (userstate.mod || '#' + userstate.username === channel) {
