@@ -4,10 +4,13 @@ const config = require("./config.js");
 const src = require("./src-commands.js");
 const rando = require("./randomizer.js");
 const rtgg = require("./racetime.js");
+const dadjoke = require("./dadjoke.js");
 
 const client = new tmi.client(config.twitch);
 const twit = new Twitter(config.twitter);
 client.connect();
+
+let jokeCooldown = false;
 
 client.on("chat", (channel, userstate, message, self) => {
     if (self) return;
@@ -40,10 +43,7 @@ client.on("chat", (channel, userstate, message, self) => {
     }
 
     if (message.startsWith('!race')) {
-        const gameLink = rtgg.getLink(client, channel);
-        if (gameLink[0] !== undefined && gameLink[0] !== undefined) {
-            client.say(channel, 'Currently racing ' + gameLink[0] + ' - watch at ' + gameLink[1]);
-        }
+        rtgg.getLink(client, channel);
     }
     
     if (message.startsWith('!sml2 race')) {
@@ -55,9 +55,18 @@ client.on("chat", (channel, userstate, message, self) => {
         const reply = rando.hardFlags();
         client.say(channel, reply);
     }
+
+    if (message === '!joke') {
+        if (jokeCooldown) return;
+        dadjoke.dadJoke(client, channel);
+        jokeCooldown = true;
+        setTimeout(() => {
+            jokeCooldown = false;
+        }, 9e4);
+    }
       
     if (message === '!help' || message === '!commands') {
-        client.say(channel, `@${userstate.username} https://github.com/slashinfty/inftyb0t/blob/master/readme.md`);
+        client.say(channel, `@${userstate.username} https://gist.github.com/slashinfty/1bf0ae88b4c7bb6556229ed44f05b351`);
     }
     
     if (userstate.mod || '#' + userstate.username === channel) {
@@ -83,7 +92,7 @@ client.on("chat", (channel, userstate, message, self) => {
     
     if (userstate.username === 'dadinfinitum') {
         try {
-            if (message.startsWith('!j')) { //bot join = !j name
+            if (message.startsWith('!j') && message !== '!joke') { //bot join = !j name
                 const nameArr = message.match(/^(\S+)\s(.*)/).slice(2);
                 if (message.startsWith('!j*') && config.channels.indexOf(nameArr[0]) === -1) config.channels.push(nameArr[0]);
                 try {
@@ -115,14 +124,8 @@ client.on("chat", (channel, userstate, message, self) => {
 				twit.post('statuses/update', {status: tweet})
 				.then(() => client.say(channel, 'tweet sent'))
 				.catch(error => {client.say(channel, 'tweet failed'); throw error;})
-			} else if (message.startsWith('!tweetrace')) { //tweet out a race
-                const gameLink = rtgg.getLink(client, channel);
-                if (gameLink[0] !== undefined && gameLink[0] !== undefined) {
-                    let tweet = '[LIVE] Now racing ' + gameLink[0] + ' - watch live at ' + gameLink[1];
-                    twit.post('statuses/update', {status: tweet})
-				    .then(() => client.say(channel, 'tweet sent'))
-                    .catch(error => {client.say(channel, 'tweet failed'); throw error;})
-                }
+			} else if (message.startsWith('!tweetrace')) {
+                rtgg.tweetLink(twit, client, channel);
             }
         } catch (error) {
             console.error(error);
